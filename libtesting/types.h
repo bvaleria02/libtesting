@@ -39,6 +39,7 @@ typedef struct{
 	uint16_t testCount;		// Amount of Singular Tests
 	uint8_t *flags;			// Flags (show histogram, export to csv)
 	SingularTest **tests;	// All the tests
+	char *exportPath;	    // Base name for export CSV
 } TestUnit;
 
 typedef union {

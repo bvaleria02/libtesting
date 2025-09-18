@@ -20,6 +20,8 @@ void zeroTestUnit(TestUnit *unit){
 		return;
 	}
 
+	unit->exportPath = NULL;
+
 	for(uint64_t i = 0; i < unit->testCount; i++){
 		unit->tests[i] = NULL;
 	}
@@ -66,6 +68,7 @@ TestUnit *createTestUnit(uint64_t count){
 
 	return unit;
 cleanup:
+	SAFE_FREE(unit->exportPath);
 	SAFE_FREE(unit->flags);
 	SAFE_FREE(unit->tests);
 	SAFE_FREE(unit);
@@ -123,6 +126,7 @@ void destroyTestUnit(TestUnit *unit){
 		destroySingularTest(unit->tests[i]);
 	}
 
+	SAFE_FREE(unit->exportPath);
 	SAFE_FREE(unit->flags);
 	SAFE_FREE(unit->tests);
 	SAFE_FREE(unit);
@@ -184,9 +188,47 @@ void TestUnitRun(TestUnit *unit){
 
 		if(unit->flags[i] & UNITFLAG_EXPORT_CSV){
 			memset(name, 0, 128);
-			snprintf(name, 128, "output/test%04li.csv", i+1);
+			if(unit->exportPath != NULL){
+				snprintf(name, 128, "%s%04li.csv", unit->exportPath, i+1);
+			} else {
+				logInfo(INFO_EXPORT_PATH_UNSET, "TestUnitRun", "unit->exportPath", 0);
+				snprintf(name, 128, "%s%04li.csv", DEFAULT_EXPORT_PATH, i+1);
+			}
 			exportSingularTestCSV(unit->tests[i], name);
 		}
 
+	}
+}
+
+
+void setExportPathHandler(TestUnit *unit, char *path){
+	if(unit == NULL || path == NULL){
+		return;
+	}
+	
+	SAFE_FREE(unit->exportPath);
+
+	size_t nameSize 	= strlen(path) + 1;
+	unit->exportPath	= (char *)malloc(nameSize);
+	if(unit->exportPath == NULL){
+		goto cleanup;
+	}
+	
+	strncpy(unit->exportPath, path, nameSize);
+	unit->exportPath[nameSize - 1] = '\0';
+	return;
+
+cleanup:
+	SAFE_FREE(unit->exportPath);
+}
+
+void testUnitSet(TestUnit *unit, uint8_t parameter, AbstractTestType value){
+	if(unit == NULL){
+		return;
+	}
+
+	switch(parameter){
+		case TU_EXPORTPATH:	setExportPathHandler(unit, value.pointer);
+							break;
 	}
 }

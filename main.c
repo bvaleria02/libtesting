@@ -25,6 +25,8 @@ int main(){
 	setFlagAllTestUnit(unit, UNITFLAG_SHOW_HISTO_MSE, 0);	// Don't show MSE histogram
 	setFlagAllTestUnit(unit, UNITFLAG_EXPORT_CSV, 	  1);   // export csv with arguments and result
 
+	//testUnitSet(unit, TU_EXPORTPATH, ATT_PTR("output/test"));
+
 	// Create a test
 	SingularTest *test1 = createNewSingularTest();
 

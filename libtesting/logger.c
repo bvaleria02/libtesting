@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include "libtesting.h"
 #include "logger.h"
 #include "enums.h"
 #include "termColor.h"
@@ -129,6 +130,13 @@ void logInfo(uint8_t infoCode, char *functionName, char *details, uint64_t value
 								fprintf(logTarget, ", test name: ");
 								printDetails(logTarget, details);
 								fprintf(logTarget, "\n");
+								break;
+		case INFO_EXPORT_PATH_UNSET:	
+								fprintf(logTarget, "Export path unset in ");
+								printFunctionName(logTarget, functionName);
+								fprintf(logTarget, ", at ");
+								printDetails(logTarget, details);
+								fprintf(logTarget, ". Using \"" NORMAL_GREEN "%s" RESET_STYLE "\"\n", DEFAULT_EXPORT_PATH);
 								break;
 		default:				
 								fprintf(logTarget, "Generic info in ");
