@@ -150,14 +150,42 @@ void logInfo(uint8_t infoCode, char *functionName, char *details, uint64_t value
 	fprintf(logTarget, "\n");
 }
 
-void logSingularTest(SingularTest *test){
-	FILE *logTarget = globalLogTarget;
+#define ALL_ERROR_THRESHOLD_FLAGS (THRES_MAE | THRES_MRE | THRES_MSE | THRES_RMSE)
+#define ERROR_THRESHOLD_NAME_COUNT 4
+const char *ErrorThresholdName[ERROR_THRESHOLD_NAME_COUNT] = {
+	"MAE", "MSE", "MRE", "RMSE"
+};
 
-	if(logTarget == NULL){
-		logTarget = stdout;
+void handleLogSingularTestType(FILE *logTarget, SingularTest *test){
+	if(test == NULL || logTarget == NULL){
+		return;
 	}
 
-	if(test == NULL){
+	uint8_t flags = 0;
+	
+	fprintf(logTarget, "           ");
+	switch(test->type){
+		case TYPE_UNDEFINED:	fprintf(logTarget, "type: " BOLD_RED "UNDEFINED" RESET_STYLE "\n");
+								break;
+		case TYPE_NUMERIC:		fprintf(logTarget, "type: " NORMAL_CYAN "numeric" RESET_STYLE "\tThreshold: " NORMAL_MAGENTA);
+								flags = getSingularTestErrorFlag(test, ALL_ERROR_THRESHOLD_FLAGS);
+								for(uint8_t i = 0; i < ERROR_THRESHOLD_NAME_COUNT; i++){
+									if(!(flags & (1 << i))){
+										continue;
+									}
+									fprintf(logTarget, "%s ", ErrorThresholdName[i]);
+								}
+								fprintf(logTarget, RESET_STYLE "\n");
+
+								break;
+		case TYPE_BOOLEAN:		fprintf(logTarget, "type: " NORMAL_YELLOW "boolean" RESET_STYLE "\n");
+								break;
+	}
+
+}
+
+void handleLogSingularTestStatusName(FILE *logTarget, SingularTest *test){
+	if(test == NULL || logTarget == NULL){
 		return;
 	}
 
@@ -177,52 +205,91 @@ void logSingularTest(SingularTest *test){
 	}
 
 	fprintf(logTarget, "Test: %s\n", test->name);
-	fprintf(logTarget, "           ");
-	switch(test->type){
-		case TYPE_UNDEFINED:	fprintf(logTarget, "type: " BOLD_RED "UNDEFINED" RESET_STYLE "\n");
-								break;
-		case TYPE_NUMERIC:		fprintf(logTarget, "type: " NORMAL_CYAN "numeric" RESET_STYLE "\tThreshold: " NORMAL_MAGENTA);
-								if(test->thresholdflag & THRES_MAE){
-									fprintf(logTarget, "MAE ");
-								}
-								if(test->thresholdflag & THRES_MRE){
-									fprintf(logTarget, "MRE ");
-								}
-								if(test->thresholdflag & THRES_MSE){
-									fprintf(logTarget, "MSE ");
-								}
-								if(test->thresholdflag & THRES_RMSE){
-									fprintf(logTarget, "RMSE ");
-								}
-								fprintf(logTarget, RESET_STYLE "\n");
-								break;
-		case TYPE_BOOLEAN:		fprintf(logTarget, "type: " NORMAL_YELLOW "boolean" RESET_STYLE "\n");
-								break;
+}
+
+
+void printLogSingularTestCommonInfo(FILE *logTarget, SingularTest *test){
+	if(test == NULL || logTarget == NULL){
+		return;
 	}
 
-	fprintf(logTarget, "           IterCount: %li -> %li/%li (%.2lf%%)\n", test->iterCount, test->passCount, test->iterCount, (test->passCount / (double) test->iterCount) * 100);
-	if(test->type == TYPE_NUMERIC){
-		fprintf(logTarget, "           Results   | MAE: %.4lf\tMRE: %.4lf\tMSE: %.4lf\tRMSE: %.4lf\n", test->mae, test->mre, test->mse, test->rmse);
-		fprintf(logTarget, "           Threshold | MAE: %.4lf\tMRE: %.4lf\tMSE: %.4lf\tRMSE: %.4lf\n\n", test->maethreshold, test->mrethreshold, test->msethreshold, test->rmsethreshold);
-		fprintf(logTarget, "           Worst results:\n");
-		fprintf(logTarget, "           Index\tArgument:\tExpected Value:\t\tObtained Result:\tError:\n");
-		for(uint64_t i = 0; i < WORST_RESULT_COUNT; i++){
-			if(test->worstresults[i] == WORST_UNSET){
-				continue;
-			}
-			fprintf(logTarget, "           %li\t\t%lf\t%lf\t\t%lf\t\t", test->worstresults[i], test->arguments[test->worstresults[i]], test->expectedResults[test->worstresults[i]], test->results[test->worstresults[i]]);
-			switch(test->worstCriteria){
-				case WORST_AE:	fprintf(logTarget, "%lf", calculateAbsoluteError(test->expectedResults[test->worstresults[i]], test->results[test->worstresults[i]]));
-								break;
-				case WORST_SE:	fprintf(logTarget, "%lf", calculateSquaredError(test->expectedResults[test->worstresults[i]], test->results[test->worstresults[i]]));
-								break;
-				case WORST_RE:	fprintf(logTarget, "%lf", calculateRelativeError(test->expectedResults[test->worstresults[i]], test->results[test->worstresults[i]]));
-								break;
-			}
-			fprintf(logTarget, "\n");
+	fprintf(logTarget, "           IterCount: %li -> %li/%li (%.2lf%%)\n",
+		test->iterCount,
+		test->passCount,
+		test->iterCount,
+		(test->passCount / (double) test->iterCount) * 100
+	);
+}
+
+void printLogSingularTestWorstResults(FILE *logTarget, SingularTest *test){
+	if(test == NULL || logTarget == NULL){
+		return;
+	}
+
+	fprintf(logTarget, "           Worst results:\n");
+	fprintf(logTarget, "           Index\tArgument:\tExpected Value:\t\tObtained Result:\tError:\n");
+	for(uint64_t i = 0; i < WORST_RESULT_COUNT; i++){
+		if(test->worstresults[i] == WORST_UNSET){
+			continue;
 		}
 
+		fprintf(logTarget, "           %li\t\t%lf\t%lf\t\t%lf\t\t", test->worstresults[i], test->arguments[test->worstresults[i]], test->expectedResults[test->worstresults[i]], test->results[test->worstresults[i]]);
+
+		switch(test->worstCriteria){
+			case WORST_AE:	fprintf(logTarget, "%lf", calculateAbsoluteError(test->expectedResults[test->worstresults[i]], test->results[test->worstresults[i]]));
+								break;
+			case WORST_SE:	fprintf(logTarget, "%lf", calculateSquaredError(test->expectedResults[test->worstresults[i]], test->results[test->worstresults[i]]));
+								break;
+			case WORST_RE:	fprintf(logTarget, "%lf", calculateRelativeError(test->expectedResults[test->worstresults[i]], test->results[test->worstresults[i]]));
+								break;
+		}
+
+		fprintf(logTarget, "\n");
 	}
+}
+void printLogSingularTestNumeric(FILE *logTarget, SingularTest *test){
+	if(test == NULL || logTarget == NULL){
+		return;
+	}
+
+	fprintf(logTarget, "           Results   | MAE: %.4lf\tMRE: %.4lf\tMSE: %.4lf\tRMSE: %.4lf\n",
+		test->mae.value,
+		test->mre.value,
+		test->mse.value,
+		test->rmse.value
+	);
+
+	fprintf(logTarget, "           Threshold | MAE: %.4lf\tMRE: %.4lf\tMSE: %.4lf\tRMSE: %.4lf\n\n",
+		test->mae.threshold,
+		test->mre.threshold,
+		test->mse.threshold,
+		test->rmse.threshold
+	);
+
+	printLogSingularTestWorstResults(logTarget, test);
+
+}
+
+void logSingularTest(SingularTest *test){
+	FILE *logTarget = globalLogTarget;
+
+	if(logTarget == NULL){
+		logTarget = stdout;
+	}
+
+	if(test == NULL){
+		return;
+	}
+
+	handleLogSingularTestStatusName(logTarget, test);
+	handleLogSingularTestType(logTarget, test);
+	printLogSingularTestCommonInfo(logTarget, test);
+
+	switch(test->type){
+		case TYPE_NUMERIC:	printLogSingularTestNumeric(logTarget, test);
+							break;
+	}
+
 	fprintf(logTarget, "\n");
 }
 

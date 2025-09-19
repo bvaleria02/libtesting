@@ -89,19 +89,19 @@ void handleNumericTest(SingularTest *test){
 							break;
 		}
 
-		if(test->thresholdflag & THRES_MAE && absolute > test->maethreshold){
+		if(test->mae.flag && absolute > test->mae.threshold){
 			continue;
 		}
 
-		if(test->thresholdflag & THRES_MSE && squared > test->msethreshold){
+		if(test->mse.flag && squared > test->mse.threshold){
 			continue;
 		}
 
-		if(test->thresholdflag & THRES_RMSE && sqrt(squared) > test->rmsethreshold){
+		if(test->rmse.flag && sqrt(squared) > test->rmse.threshold){
 			continue;
 		}
 
-		if(test->thresholdflag & THRES_MRE && relative > test->mrethreshold){
+		if(test->mre.flag && relative > test->mre.threshold){
 			continue;
 		}
 
@@ -109,10 +109,10 @@ void handleNumericTest(SingularTest *test){
 
 	}
 
-	test->mae  =      diff_mae / (double) test->iterCount;
-	test->mse  =      diff_mse / (double) test->iterCount;
-	test->rmse = sqrt(diff_mse / (double) test->iterCount);
-	test->mre  =      diff_mre / (double) test->iterCount;
+	test->mae.value  =      diff_mae / (double) test->iterCount;
+	test->mse.value  =      diff_mse / (double) test->iterCount;
+	test->rmse.value = sqrt(diff_mse / (double) test->iterCount);
+	test->mre.value  =      diff_mre / (double) test->iterCount;
 }
 
 void handleBooleanTest(SingularTest *test){

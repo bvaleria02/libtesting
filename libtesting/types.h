@@ -8,21 +8,21 @@
 #define WORST_UNSET 0xFFFFFFFFFFFFFFFF
 
 typedef struct{
+	double value;
+	double threshold;
+	uint8_t flag;
+} ErrorMetric;
+
+typedef struct{
 	char *name;				// Name of the test
 	uint8_t status;			// Status: 0=untestes, 1=failed, 2=ok, 3=passed
 	uint8_t type;			// Type: 0=numeric, 1=boolean
 	uint64_t iterCount;		// Iter count for tests
-
-	double mae;				// Mean absolute error
-	double mse;				// Mean squared error
-	double rmse;			// Root mean squared error
-	double mre;				// Mean relative error
-
-	uint8_t thresholdflag;  // Flags for threshold
-	double maethreshold;	// Threshold for mae
-	double msethreshold;	// Threshold for mse
-	double rmsethreshold;	// Threshold for rmse
-	double mrethreshold;	// Threshold for mre
+	
+	ErrorMetric mae;
+	ErrorMetric mse;
+	ErrorMetric rmse;
+	ErrorMetric mre;
 
 	uint8_t  worstCriteria;							// select the worst based on AE, RE, SE
 	uint64_t worstresults[WORST_RESULT_COUNT];		// stores the worst N results index

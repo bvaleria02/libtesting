@@ -20,6 +20,7 @@ void destroySingularTest(SingularTest *test);
 void SingularTestRun(SingularTest *test);
 void SingularTestZeroAll(SingularTest *test);
 void copyDetailsSingularTest(SingularTest *dest, SingularTest *src);
+uint8_t getSingularTestErrorFlag(SingularTest *test, uint8_t flag);
 
 // src/testunit.c
 TestUnit *createTestUnit(uint64_t count);

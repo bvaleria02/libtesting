@@ -8,6 +8,25 @@
 #include "enums.h"
 #include "logger.h"
 #include "singulartesthandlers.h"
+#include "utils.h"
+
+void ErrorMetricZero(ErrorMetric *metric){
+	if(metric == NULL){
+		return;
+	}
+	
+	metric->value 		= 0;
+	metric->flag		= 0;
+	metric->threshold 	= 0;
+}
+
+void ErrorMetricZeroTest(ErrorMetric *metric){
+	if(metric == NULL){
+		return;
+	}
+	
+	metric->value 		= 0;
+}
 
 void SingularTestZeroAll(SingularTest *test){
 	if(test == NULL){
@@ -18,15 +37,12 @@ void SingularTestZeroAll(SingularTest *test){
 	test->status			= STATUS_NOT_TESTED;
 	test->type				= TYPE_UNDEFINED;
 	test->iterCount 		= 0;
-	test->mae				= 0;
-	test->mse				= 0;
-	test->rmse				= 0;
-	test->mre				= 0;
-	test->thresholdflag		= 0;
-	test->maethreshold 		= 0;
-	test->msethreshold 		= 0;
-	test->rmsethreshold		= 0;
-	test->mrethreshold 		= 0;
+
+	ErrorMetricZero(&test->mae);
+	ErrorMetricZero(&test->mre);
+	ErrorMetricZero(&test->mse);
+	ErrorMetricZero(&test->rmse);
+
 	test->passCount 		= 0;
 	test->arguments 		= NULL;
 	test->results			= NULL;
@@ -44,10 +60,12 @@ void SingularTestZeroTest(SingularTest *test){
 	}
 
 	test->status			= STATUS_NOT_TESTED;
-	test->mae				= 0;
-	test->mse				= 0;
-	test->rmse				= 0;
-	test->mre				= 0;
+
+	ErrorMetricZeroTest(&test->mae);
+	ErrorMetricZeroTest(&test->mre);
+	ErrorMetricZeroTest(&test->mse);
+	ErrorMetricZeroTest(&test->rmse);
+
 	test->passCount 		= 0;
 
 	for(uint64_t i = 0; i < WORST_RESULT_COUNT; i++){
@@ -156,6 +174,17 @@ cleanup:
 	test->iterCount = 0;
 }
 
+void setMetricFlagHandler(SingularTest *test, uint8_t flags){
+	if(test == NULL){
+		return;
+	}
+
+	test->mae.flag  = setFlag(test->mae.flag,  THRES_MAE,  flags);
+	test->mre.flag  = setFlag(test->mre.flag,  THRES_MRE,  flags);
+	test->mse.flag  = setFlag(test->mse.flag,  THRES_MSE,  flags);
+	test->rmse.flag = setFlag(test->rmse.flag, THRES_RMSE, flags);
+}
+
 void singularTestSet(SingularTest *test, uint8_t parameter, AbstractTestType value){
 	if(test == NULL){
 		return;
@@ -170,20 +199,20 @@ void singularTestSet(SingularTest *test, uint8_t parameter, AbstractTestType val
 								break;
 		case ST_ITERCOUNT:		setIterCountHandler(test, value.unsig_int);
 								break;
-		case ST_MAETHRESHOLD:	test->maethreshold = value.floatingpoint;
+		case ST_MAETHRESHOLD:	test->mae.threshold = value.floatingpoint;
 								break;
-		case ST_MSETHRESHOLD:	test->msethreshold = value.floatingpoint;
+		case ST_MSETHRESHOLD:	test->mse.threshold = value.floatingpoint;
 								break;
-		case ST_RMSETHRESHOLD:	test->rmsethreshold = value.floatingpoint;
+		case ST_RMSETHRESHOLD:	test->rmse.threshold = value.floatingpoint;
 								break;
-		case ST_MRETHRESHOLD:	test->mrethreshold = value.floatingpoint;
+		case ST_MRETHRESHOLD:	test->mre.threshold = value.floatingpoint;
 								break;
 		case ST_PASSTHRESHOLD:	test->passThreshold = value.floatingpoint;
 								break;
 		case ST_TESTFUNCTION:	if(value.pointer == NULL) return;
 								test->testFunction = value.pointer;
 								break;
-		case ST_THRESHOLDFLAG:	test->thresholdflag = value.unsig_int & 0xF;
+		case ST_THRESHOLDFLAG:	setMetricFlagHandler(test, value.unsig_int & 0xF);
 								break;
 		case ST_WORSTCRITERIA:	test->worstCriteria = value.unsig_int & 0x3;
 								break;
@@ -258,6 +287,17 @@ void SingularTestRun(SingularTest *test){
 	afterTestStatus(test);
 }
 
+void copyErroMetric(ErrorMetric *dest, ErrorMetric *src){
+	if(dest == NULL || src == NULL){
+		logError(ERROR_NULL_POINTER, "copyErroMetric", "dest or src", 0);
+		return;
+	}
+
+	dest->flag		= src->flag;
+	dest->value 	= src->value;
+	dest->threshold = src->threshold;
+}
+
 void copyDetailsSingularTest(SingularTest *dest, SingularTest *src){
 	if(dest == NULL || src == NULL){
 		logError(ERROR_NULL_POINTER, "copySingularTest", "dest or src", 0);
@@ -267,13 +307,37 @@ void copyDetailsSingularTest(SingularTest *dest, SingularTest *src){
 	dest->name			= NULL;
 	dest->status 		= STATUS_NOT_TESTED;
 	dest->type   		= src->type;
-	dest->maethreshold 	= src->maethreshold;
-	dest->msethreshold 	= src->msethreshold;
-	dest->rmsethreshold = src->rmsethreshold;
-	dest->mrethreshold 	= src->mrethreshold;
-	dest->thresholdflag = src->thresholdflag;
+
+	copyErroMetric(&dest->mae, &src->mae);
+	copyErroMetric(&dest->mre, &src->mre);
+	copyErroMetric(&dest->mse, &src->mse);
+	copyErroMetric(&dest->rmse, &src->rmse);
+
 	dest->passThreshold = src->passThreshold;
 	dest->testFunction  = NULL;
 	dest->worstCriteria = src->worstCriteria;
 	singularTestSet(dest, ST_ITERCOUNT, ATT_UINT(src->iterCount));
+}
+
+uint8_t getSingularTestErrorFlag(SingularTest *test, uint8_t flag){
+	if(test == NULL){
+		return 0;
+	}
+
+	uint8_t result = 0;
+
+	if(getFlag(flag, THRES_MAE)){
+		result = result | test->mae.flag;
+	}
+	if(getFlag(flag, THRES_MRE)){
+		result = result | test->mre.flag;
+	}
+	if(getFlag(flag, THRES_MSE)){
+		result = result | test->mse.flag;
+	}
+	if(getFlag(flag, THRES_RMSE)){
+		result = result | test->rmse.flag;
+	}
+
+	return result;
 }
