@@ -8,9 +8,18 @@
 #define WORST_UNSET 0xFFFFFFFFFFFFFFFF
 
 typedef struct{
-	double value;
-	double threshold;
+	double minValue;
+	double maxValue;
+	double average;
+	double elapsed;
+} TimeMetric;
+
+typedef struct{
+	double 	value;
+	double 	threshold;
 	uint8_t flag;
+	double 	maxValue;
+	double 	minValue;
 } ErrorMetric;
 
 typedef struct{
@@ -24,6 +33,8 @@ typedef struct{
 	ErrorMetric rmse;
 	ErrorMetric mre;
 
+	TimeMetric time;
+
 	uint8_t  worstCriteria;							// select the worst based on AE, RE, SE
 	uint64_t worstresults[WORST_RESULT_COUNT];		// stores the worst N results index
 
@@ -32,7 +43,7 @@ typedef struct{
 	double *arguments;		// Input arguments for test function
 	double *results;		// Output of test function
 	double *expectedResults;// Expected output of test function
-	double (*testFunction)(double *arguments, size_t argSize);
+	double (*testFunction)(double *arguments, size_t index, double *time);
 } SingularTest;
 
 typedef struct{

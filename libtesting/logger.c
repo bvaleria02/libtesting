@@ -219,6 +219,16 @@ void printLogSingularTestCommonInfo(FILE *logTarget, SingularTest *test){
 		test->iterCount,
 		(test->passCount / (double) test->iterCount) * 100
 	);
+
+	if(test->time.elapsed > 0){
+		fprintf(logTarget, "           Time elapsed | %.4le [s]\tAverage: %.4le [s/test]\tMin: %.4le [s]\tMax: %.4le [s]\n",
+			test->time.elapsed,
+			test->time.average,
+			test->time.minValue,
+			test->time.maxValue
+		);
+	}
+
 }
 
 void printLogSingularTestWorstResults(FILE *logTarget, SingularTest *test){
@@ -247,24 +257,30 @@ void printLogSingularTestWorstResults(FILE *logTarget, SingularTest *test){
 		fprintf(logTarget, "\n");
 	}
 }
+
+#define PRINT_NUMERIC_DETAILS_ERROR_METRIC(logTarget, test, method, name) do{	\
+	fprintf(logTarget, "           %s\t| MAE: %.4lf\tMRE: %.4lf\tMSE: %.4lf\tRMSE: %.4lf\n",\
+		name,				\
+		test->mae.method,	\
+		test->mre.method,	\
+		test->mse.method,	\
+		test->rmse.method	\
+	);						\
+} while(0)
+
 void printLogSingularTestNumeric(FILE *logTarget, SingularTest *test){
 	if(test == NULL || logTarget == NULL){
 		return;
 	}
 
-	fprintf(logTarget, "           Results   | MAE: %.4lf\tMRE: %.4lf\tMSE: %.4lf\tRMSE: %.4lf\n",
-		test->mae.value,
-		test->mre.value,
-		test->mse.value,
-		test->rmse.value
-	);
+	fprintf(logTarget, "\n");
 
-	fprintf(logTarget, "           Threshold | MAE: %.4lf\tMRE: %.4lf\tMSE: %.4lf\tRMSE: %.4lf\n\n",
-		test->mae.threshold,
-		test->mre.threshold,
-		test->mse.threshold,
-		test->rmse.threshold
-	);
+	PRINT_NUMERIC_DETAILS_ERROR_METRIC(logTarget, test, value, 		"result");
+	PRINT_NUMERIC_DETAILS_ERROR_METRIC(logTarget, test, threshold, 	"threshold");
+	PRINT_NUMERIC_DETAILS_ERROR_METRIC(logTarget, test, minValue, 	"Min\t");
+	PRINT_NUMERIC_DETAILS_ERROR_METRIC(logTarget, test, maxValue, 	"Max\t");
+
+	fprintf(logTarget, "\n");
 
 	printLogSingularTestWorstResults(logTarget, test);
 

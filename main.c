@@ -5,11 +5,24 @@
 #include "libtesting/types.h"
 #include "libtesting/enums.h"
 #include "libtesting/logger.h"
-
+#include "libtesting/timer.h"
 
 // Test function for test1
-double testFunction(double *arguments, uint64_t index){
+double testFunction(double *arguments, uint64_t index, double *time){
 	double value = arguments[index];
+
+	// Comment below if you don't want to time it
+	startTimer();
+
+	// Place here the function you want to time
+	value = value * 0.996 - 1;
+
+	// Comment below if you don't want to time it
+	(*time) = stopTimer();
+
+	// Uncomment below if you don't want to time it
+	// (void) time;
+
 	return value;
 }
 
@@ -25,6 +38,7 @@ int main(){
 	setFlagAllTestUnit(unit, UNITFLAG_SHOW_HISTO_MSE, 0);	// Don't show MSE histogram
 	setFlagAllTestUnit(unit, UNITFLAG_EXPORT_CSV, 	  1);   // export csv with arguments and result
 
+	// Set export path
 	//testUnitSet(unit, TU_EXPORTPATH, ATT_PTR("output/test"));
 
 	// Create a test
@@ -46,7 +60,7 @@ int main(){
 	// Fill the arguments and expected results
 	for(uint64_t i = 0; i < test1->iterCount; i++){
 		test1->arguments[i] 		= (double) i;
-		test1->expectedResults[i] 	= (double) i + 1;
+		test1->expectedResults[i] 	= (double) i;
 	}
 
 	// Insert test1 into unit with position 0

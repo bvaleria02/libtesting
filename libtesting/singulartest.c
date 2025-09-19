@@ -10,6 +10,18 @@
 #include "singulartesthandlers.h"
 #include "utils.h"
 
+
+void TimeMetricZero(TimeMetric *metric){
+	if(metric == NULL){
+		return;
+	}
+
+	metric->minValue	= 0;
+	metric->maxValue	= 0;
+	metric->average		= 0;
+	metric->elapsed		= 0;
+}
+
 void ErrorMetricZero(ErrorMetric *metric){
 	if(metric == NULL){
 		return;
@@ -18,6 +30,8 @@ void ErrorMetricZero(ErrorMetric *metric){
 	metric->value 		= 0;
 	metric->flag		= 0;
 	metric->threshold 	= 0;
+	metric->minValue 	= 0;
+	metric->maxValue 	= 0;
 }
 
 void ErrorMetricZeroTest(ErrorMetric *metric){
@@ -26,6 +40,8 @@ void ErrorMetricZeroTest(ErrorMetric *metric){
 	}
 	
 	metric->value 		= 0;
+	metric->minValue 	= 0;
+	metric->maxValue 	= 0;
 }
 
 void SingularTestZeroAll(SingularTest *test){
@@ -42,6 +58,8 @@ void SingularTestZeroAll(SingularTest *test){
 	ErrorMetricZero(&test->mre);
 	ErrorMetricZero(&test->mse);
 	ErrorMetricZero(&test->rmse);
+
+	TimeMetricZero(&test->time);
 
 	test->passCount 		= 0;
 	test->arguments 		= NULL;
@@ -65,6 +83,8 @@ void SingularTestZeroTest(SingularTest *test){
 	ErrorMetricZeroTest(&test->mre);
 	ErrorMetricZeroTest(&test->mse);
 	ErrorMetricZeroTest(&test->rmse);
+
+	TimeMetricZero(&test->time);
 
 	test->passCount 		= 0;
 
@@ -231,6 +251,29 @@ void destroySingularTest(SingularTest *test){
 	SAFE_FREE(test);
 }
 
+void handeTimerSingularTest(SingularTest *test, double time){
+	if(test == NULL){
+		return;
+	}
+	
+	if(time > test->time.maxValue){
+		test->time.maxValue = time;
+	}
+
+	if(time < test->time.minValue || test->time.minValue == 0){
+		test->time.minValue = time;
+	}
+
+	test->time.elapsed += time;
+}
+
+void handlePostTestTimerSingularTest(SingularTest *test){
+	if(test == NULL){
+		return;
+	}
+
+	test->time.average = test->time.elapsed / (double) test->iterCount;
+}
 
 void SingularTestRun(SingularTest *test){
 	if(test == NULL){
@@ -265,13 +308,15 @@ void SingularTestRun(SingularTest *test){
 
 	SingularTestZeroTest(test);
 
+	double time = 0;
 	double result = 0;
 	for(uint64_t i = 0; i < test->iterCount; i++){
-//		printf("i: %li\n", i);
-		result = test->testFunction(test->arguments, i);
-//		printf("r: %lf\n", result);
+		result = test->testFunction(test->arguments, i, &time);
 		test->results[i] = result;
+		handeTimerSingularTest(test, time);
 	}
+
+	handlePostTestTimerSingularTest(test);
 
 	test->status = STATUS_TESTED;
 	

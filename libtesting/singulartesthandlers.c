@@ -26,6 +26,100 @@ double calculateRelativeError(double reference, double obtained){
 	}
 }
 
+void updateMaxMinValues(SingularTest *test, double absolute, double relative, double squared){
+	if(test == NULL){
+		return;
+	}
+
+	if(test->mae.minValue == 0){
+		test->mae.minValue = absolute;
+	}
+
+	if(test->mre.minValue == 0){
+		test->mre.minValue = relative;
+	}
+
+	if(test->mse.minValue == 0){
+		test->mse.minValue = squared;
+	}
+
+	if(absolute > test->mae.maxValue){
+		test->mae.maxValue = absolute;
+	}
+
+	if(relative > test->mre.maxValue){
+		test->mre.maxValue = relative;
+	}
+
+	if(squared > test->mse.maxValue){
+		test->mse.maxValue = squared;
+	}
+
+	if(absolute < test->mae.minValue){
+		test->mae.minValue = absolute;
+	}
+
+	if(relative < test->mre.minValue){
+		test->mre.minValue = relative;
+	}
+
+	if(squared < test->mse.minValue){
+		test->mse.minValue = squared;
+	}
+}
+
+
+uint8_t valuesAreHigherThanThreshold(SingularTest *test, double absolute, double relative, double squared){
+	if(test == NULL){
+		return 0;
+	}
+
+	uint8_t result = 0;
+
+	if(test->mae.flag && absolute > test->mae.threshold){
+		result = 1;
+	}
+
+	if(test->mse.flag && squared > test->mse.threshold){
+		result = 1;
+	}
+
+	if(test->rmse.flag && sqrt(squared) > test->rmse.threshold){
+		result = 1;
+	}
+
+	if(test->mre.flag && relative > test->mre.threshold){
+		result = 1;
+	}
+
+	return result;
+}
+
+#define UPDATE_WORST_ERRORS(test, metric, worstindex, worsterror, i) do{	\
+	if(metric > (*worsterror)){												\
+		(*worsterror) = metric;												\
+		test->worstresults[(*worstindex)] = i;								\
+		(*worstindex) = ((*worstindex) + 1) % WORST_RESULT_COUNT;			\
+	}																		\
+} while(0)
+
+void handleWorstCriteria(SingularTest *test, double absolute, double relative, double squared, uint64_t *worstindex, double *worsterror, uint64_t i){
+	switch(test->worstCriteria){
+		case WORST_AE:	//printf("Found worst AE\n");
+						UPDATE_WORST_ERRORS(test, absolute, worstindex, worsterror, i);
+						break;
+		case WORST_RE:	//printf("Found worst RE\n"); 
+						UPDATE_WORST_ERRORS(test, relative, worstindex, worsterror, i);
+						break;
+		case WORST_SE:	//printf("Found worst SE\n"); 
+						UPDATE_WORST_ERRORS(test, squared, worstindex, worsterror, i);
+						break;
+		default:		// Do nothing
+						break;
+	}
+}
+
+
 void handleNumericTest(SingularTest *test){
 	if(test == NULL){
 		return;
@@ -63,45 +157,11 @@ void handleNumericTest(SingularTest *test){
 		diff_mse += squared;
 		diff_mre += relative;
 
-		switch(test->worstCriteria){
-			case WORST_AE:	//printf("Found worst AE\n");
-							if(absolute > worsterror){
-								worsterror = absolute;
-								test->worstresults[worstindex] = i;
-								worstindex = (worstindex + 1) % WORST_RESULT_COUNT;
-							}
-							break;
-			case WORST_SE:	//printf("Found worst SE\n"); 
-							if(squared > worsterror){
-								worsterror = squared;
-								test->worstresults[worstindex] = i;
-								worstindex = (worstindex + 1) % WORST_RESULT_COUNT;
-							}
-							break;
-			case WORST_RE:	//printf("Found worst RE\n"); 
-							if(relative > worsterror){
-								worsterror = relative;
-								test->worstresults[worstindex] = i;
-								worstindex = (worstindex + 1) % WORST_RESULT_COUNT;
-							}
-							break;
-			default:		// Do nothing
-							break;
-		}
+		updateMaxMinValues(test, absolute, relative, squared);
 
-		if(test->mae.flag && absolute > test->mae.threshold){
-			continue;
-		}
+		handleWorstCriteria(test, absolute, relative, squared, &worstindex, &worsterror, i);
 
-		if(test->mse.flag && squared > test->mse.threshold){
-			continue;
-		}
-
-		if(test->rmse.flag && sqrt(squared) > test->rmse.threshold){
-			continue;
-		}
-
-		if(test->mre.flag && relative > test->mre.threshold){
+		if(valuesAreHigherThanThreshold(test, absolute, relative, squared)){
 			continue;
 		}
 
