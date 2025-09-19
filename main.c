@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <stdint.h>
 #include "libtesting/libtesting.h"
 #include "libtesting/types.h"
 #include "libtesting/enums.h"
-#include "libtesting/logger.h"
+//#include "libtesting/logger.h"
 #include "libtesting/timer.h"
 
 // Test function for test1

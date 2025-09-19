@@ -100,8 +100,7 @@ setFlagAllTestUnit(unit, UNITFLAG_SHOW_HISTO_MSE, 0);	// Don't show MSE histogra
 setFlagAllTestUnit(unit, UNITFLAG_EXPORT_CSV, 	  1);   // export csv with arguments and result
 ```
 
-[Note to add the image later]
+![Screenshot of the output]("https://github.com/bvaleria02/libtesting/blob/assets/1.png?raw=true")
 
-
-
-  
+And here is the CSV output, it includes the index, arguments, the expected results (for example from math.h sin) and the results (for example your CORDIC implementation of sin).
+![Screenshot of the CSV]("https://github.com/bvaleria02/libtesting/blob/assets/2.png?raw=true")
