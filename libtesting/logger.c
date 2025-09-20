@@ -286,7 +286,7 @@ void printLogSingularTestNumeric(FILE *logTarget, SingularTest *test){
 
 }
 
-void logSingularTest(SingularTest *test){
+ErrorCode logSingularTest(SingularTest *test){
 	FILE *logTarget = globalLogTarget;
 
 	if(logTarget == NULL){
@@ -294,7 +294,7 @@ void logSingularTest(SingularTest *test){
 	}
 
 	if(test == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	handleLogSingularTestStatusName(logTarget, test);
@@ -307,28 +307,31 @@ void logSingularTest(SingularTest *test){
 	}
 
 	fprintf(logTarget, "\n");
+
+	return NO_ERROR;
 }
 
-void logSingularTestHistogram(SingularTest *test, uint8_t type){
+ErrorCode logSingularTestHistogram(SingularTest *test, uint8_t type){
 	if(test == NULL){
 		logError(ERROR_NULL_POINTER, "logSingularTestHistogram", "test", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->results == NULL || test->expectedResults == NULL){
 		logError(ERROR_NULL_POINTER, "logSingularTestHistogram", "test->expectedResults or test->results", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	size_t chunk = sizeof(double) * test->iterCount;
 	double *src = (double *)malloc(chunk);
 	if(src == NULL){
-		return;
+		return ERROR_MALLOC;
 	}
 
 	double reference = 0;
 	double obtained  = 0;
 	char *name = NULL;
+	ErrorCode r = NO_ERROR;
 
 	for(uint64_t i = 0; i < test->iterCount; i++){
 		reference = test->expectedResults[i];
@@ -361,7 +364,9 @@ void logSingularTestHistogram(SingularTest *test, uint8_t type){
 							break;
 	}
 	
-	plotHistogram(src, test->iterCount, DEFAULT_X_LENGTH, DEFAULT_Y_LENGTH, name);
+	r = plotHistogram(src, test->iterCount, DEFAULT_X_LENGTH, DEFAULT_Y_LENGTH, name);
+	if(r != NO_ERROR) return r;
 
 	free(src);
+	return NO_ERROR;
 }

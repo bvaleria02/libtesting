@@ -26,9 +26,9 @@ double calculateRelativeError(double reference, double obtained){
 	}
 }
 
-void updateMaxMinValues(SingularTest *test, double absolute, double relative, double squared){
+ErrorCode updateMaxMinValues(SingularTest *test, double absolute, double relative, double squared){
 	if(test == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->mae.minValue == 0){
@@ -66,8 +66,9 @@ void updateMaxMinValues(SingularTest *test, double absolute, double relative, do
 	if(squared < test->mse.minValue){
 		test->mse.minValue = squared;
 	}
-}
 
+	return NO_ERROR;
+}
 
 uint8_t valuesAreHigherThanThreshold(SingularTest *test, double absolute, double relative, double squared){
 	if(test == NULL){
@@ -103,7 +104,11 @@ uint8_t valuesAreHigherThanThreshold(SingularTest *test, double absolute, double
 	}																		\
 } while(0)
 
-void handleWorstCriteria(SingularTest *test, double absolute, double relative, double squared, uint64_t *worstindex, double *worsterror, uint64_t i){
+ErrorCode handleWorstCriteria(SingularTest *test, double absolute, double relative, double squared, uint64_t *worstindex, double *worsterror, uint64_t i){
+	if(test == NULL || worstindex == NULL || worsterror == NULL){
+		return ERROR_NULL_POINTER;
+	}
+
 	switch(test->worstCriteria){
 		case WORST_AE:	//printf("Found worst AE\n");
 						UPDATE_WORST_ERRORS(test, absolute, worstindex, worsterror, i);
@@ -117,20 +122,22 @@ void handleWorstCriteria(SingularTest *test, double absolute, double relative, d
 		default:		// Do nothing
 						break;
 	}
+
+	return NO_ERROR;
 }
 
 
-void handleNumericTest(SingularTest *test){
+ErrorCode handleNumericTest(SingularTest *test){
 	if(test == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->results == NULL || test->expectedResults == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->iterCount == 0){
-		return;
+		return ERROR_ITER_ZERO;
 	}
 
 	double reference = 0;
@@ -145,6 +152,8 @@ void handleNumericTest(SingularTest *test){
 	uint64_t worstindex = 0;
 	double worsterror = 0;
 
+	ErrorCode r = NO_ERROR;
+
 	for(uint64_t i = 0; i < test->iterCount; i++){
 		reference = test->expectedResults[i];
 		obtained = test->results[i];
@@ -157,9 +166,11 @@ void handleNumericTest(SingularTest *test){
 		diff_mse += squared;
 		diff_mre += relative;
 
-		updateMaxMinValues(test, absolute, relative, squared);
+		r = updateMaxMinValues(test, absolute, relative, squared);
+		if(r != NO_ERROR) return r;
 
-		handleWorstCriteria(test, absolute, relative, squared, &worstindex, &worsterror, i);
+		r = handleWorstCriteria(test, absolute, relative, squared, &worstindex, &worsterror, i);
+		if(r != NO_ERROR) return r;
 
 		if(valuesAreHigherThanThreshold(test, absolute, relative, squared)){
 			continue;
@@ -173,19 +184,21 @@ void handleNumericTest(SingularTest *test){
 	test->mse.value  =      diff_mse / (double) test->iterCount;
 	test->rmse.value = sqrt(diff_mse / (double) test->iterCount);
 	test->mre.value  =      diff_mre / (double) test->iterCount;
+
+	return NO_ERROR;
 }
 
-void handleBooleanTest(SingularTest *test){
+ErrorCode handleBooleanTest(SingularTest *test){
 	if(test == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->results == NULL || test->expectedResults == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->iterCount == 0){
-		return;
+		return ERROR_ITER_ZERO;
 	}
 
 	for(uint64_t i = 0; i < test->iterCount; i++){
@@ -193,15 +206,17 @@ void handleBooleanTest(SingularTest *test){
 			test->passCount += 1;
 		}
 	}
+
+	return NO_ERROR;
 }
 
-void afterTestStatus(SingularTest *test){
+ErrorCode afterTestStatus(SingularTest *test){
 	if(test == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->iterCount == 0){
-		return;
+		return ERROR_ITER_ZERO;
 	}
 
 	double pass = test->passCount / (double)test->iterCount;
@@ -213,5 +228,7 @@ void afterTestStatus(SingularTest *test){
 	} else {
 		test->status = STATUS_FAILED;
 	}
+
+	return NO_ERROR;
 }
 

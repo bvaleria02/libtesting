@@ -13,6 +13,9 @@
 #define DEFAULT_Y_LENGTH 6
 */
 
-void plotHistogram(double *data, size_t size, uint8_t x, uint8_t y, char *name);
+#include "enums.h"
+#include "types.h"
+
+ErrorCode plotHistogram(double *data, size_t size, uint8_t x, uint8_t y, char *name);
 
 #endif // LIBTESTING_HISTOGRAM_H

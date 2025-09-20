@@ -7,17 +7,17 @@
 #include "logger.h"
 #include "csv.h"
 
-void zeroTestUnit(TestUnit *unit){
+ErrorCode zeroTestUnit(TestUnit *unit){
 	if(unit == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(unit->tests == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(unit->flags == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	unit->exportPath = NULL;
@@ -29,6 +29,8 @@ void zeroTestUnit(TestUnit *unit){
 	for(uint64_t i = 0; i < unit->testCount; i++){
 		unit->flags[i] = 0;
 	}
+
+	return NO_ERROR;
 }
 
 TestUnit *createTestUnit(uint64_t count){
@@ -63,8 +65,9 @@ TestUnit *createTestUnit(uint64_t count){
 		goto cleanup;
 	}
 
-
-	zeroTestUnit(unit);
+	ErrorCode r = NO_ERROR;
+	r = zeroTestUnit(unit);
+	if(r != NO_ERROR) goto cleanup;
 
 	return unit;
 cleanup:
@@ -75,47 +78,53 @@ cleanup:
 	return NULL;
 }
 
-void setFlagTestUnit(TestUnit *unit, uint16_t index, uint8_t flag, uint8_t value){
+ErrorCode setFlagTestUnit(TestUnit *unit, uint16_t index, uint8_t flag, uint8_t value){
 	if(unit == NULL){
 		logError(ERROR_NULL_POINTER, "setFlagTestUnit", "unit", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(unit->flags == NULL){
 		logError(ERROR_NULL_POINTER, "setFlagTestUnit", "unit->flags", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(index >= unit->testCount){
 		logError(ERROR_INDEX_TOOBIG, "setFlagTestUnit", "index", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 	
 	unit->flags[index] = unit->flags[index] & ~(flag);
 	if(value & 0x1){
 		unit->flags[index] = unit->flags[index] | (flag);
 	}
+
+	return NO_ERROR;
 }
 
-void setFlagAllTestUnit(TestUnit *unit, uint8_t flag, uint8_t value){
+ErrorCode setFlagAllTestUnit(TestUnit *unit, uint8_t flag, uint8_t value){
 	if(unit == NULL){
 		logError(ERROR_NULL_POINTER, "setFlagAllTestUnit", "unit", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(unit->flags == NULL){
 		logError(ERROR_NULL_POINTER, "setFlagAllTestUnit", "unit->flags", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
+	ErrorCode r = NO_ERROR;
 	for(uint16_t i = 0; i < unit->testCount; i++){
-		setFlagTestUnit(unit, i, flag, value);
+		r = setFlagTestUnit(unit, i, flag, value);
+		if(r != NO_ERROR) return r;
 	}
+
+	return NO_ERROR;
 }
 
-void destroyTestUnit(TestUnit *unit){
+ErrorCode destroyTestUnit(TestUnit *unit){
 	if(unit == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	for(uint64_t i = 0; i < unit->testCount; i++){
@@ -130,33 +139,39 @@ void destroyTestUnit(TestUnit *unit){
 	SAFE_FREE(unit->flags);
 	SAFE_FREE(unit->tests);
 	SAFE_FREE(unit);
+
+	return NO_ERROR;
 }
 
-void insertTestIntoTestUnit(TestUnit *unit, SingularTest *test, uint64_t pos){
+ErrorCode insertTestIntoTestUnit(TestUnit *unit, SingularTest *test, uint64_t pos){
 	if(unit == NULL || test == NULL){
 		logError(ERROR_NULL_POINTER, "insertTestIntoTestUnit", "TestUnit or SingularTest", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 	
 	if(pos >= unit->testCount){
 		logError(ERROR_INDEX_TOOBIG, "insertTestIntoTestUnit", "pos", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
+	ErrorCode r = NO_ERROR;
 	if(unit->tests[pos] != NULL){
-		destroySingularTest(unit->tests[pos]);
+		r = destroySingularTest(unit->tests[pos]);
+		if(r != NO_ERROR) return r;
 	}
 
 	unit->tests[pos] = test;
+	return NO_ERROR;
 }
 
-void TestUnitRun(TestUnit *unit){
+ErrorCode TestUnitRun(TestUnit *unit){
 	if(unit == NULL){
 		logError(ERROR_NULL_POINTER, "TestUnitRun", "unit", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	char name[128];
+	ErrorCode r = NO_ERROR;
 	
 	for(uint64_t i = 0; i < unit->testCount; i++){
 		if(unit->tests[i] == NULL){
@@ -168,22 +183,28 @@ void TestUnitRun(TestUnit *unit){
 			continue;
 		}
 
-		SingularTestRun(unit->tests[i]);
+		r = SingularTestRun(unit->tests[i]);
+		if(r != NO_ERROR) return r;
+
 
 		if(unit->flags[i] & UNITFLAG_LOG_RESULTS){
-			logSingularTest(unit->tests[i]);
+			r = logSingularTest(unit->tests[i]);
+			if(r != NO_ERROR) return r;
 		}
 
 		if(unit->flags[i] & UNITFLAG_SHOW_HISTO_MAE){
-			logSingularTestHistogram(unit->tests[i], HISTOGRAM_MAE);
+			r = logSingularTestHistogram(unit->tests[i], HISTOGRAM_MAE);
+			if(r != NO_ERROR) return r;
 		}
 
 		if(unit->flags[i] & UNITFLAG_SHOW_HISTO_MRE){
-			logSingularTestHistogram(unit->tests[i], HISTOGRAM_MRE);
+			r = logSingularTestHistogram(unit->tests[i], HISTOGRAM_MRE);
+			if(r != NO_ERROR) return r;
 		}
 
 		if(unit->flags[i] & UNITFLAG_SHOW_HISTO_MSE){
-			logSingularTestHistogram(unit->tests[i], HISTOGRAM_MSE);
+			r = logSingularTestHistogram(unit->tests[i], HISTOGRAM_MSE);
+			if(r != NO_ERROR) return r;
 		}
 
 		if(unit->flags[i] & UNITFLAG_EXPORT_CSV){
@@ -194,16 +215,19 @@ void TestUnitRun(TestUnit *unit){
 				logInfo(INFO_EXPORT_PATH_UNSET, "TestUnitRun", "unit->exportPath", 0);
 				snprintf(name, 128, "%s%04li.csv", DEFAULT_EXPORT_PATH, i+1);
 			}
-			exportSingularTestCSV(unit->tests[i], name);
+			r = exportSingularTestCSV(unit->tests[i], name);
+			if(r != NO_ERROR) return r;
 		}
 
 	}
+
+	return NO_ERROR;
 }
 
 
-void setExportPathHandler(TestUnit *unit, char *path){
+ErrorCode setExportPathHandler(TestUnit *unit, char *path){
 	if(unit == NULL || path == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 	
 	SAFE_FREE(unit->exportPath);
@@ -216,19 +240,23 @@ void setExportPathHandler(TestUnit *unit, char *path){
 	
 	strncpy(unit->exportPath, path, nameSize);
 	unit->exportPath[nameSize - 1] = '\0';
-	return;
+	return NO_ERROR;
 
 cleanup:
 	SAFE_FREE(unit->exportPath);
+	return ERROR_MALLOC;
 }
 
-void testUnitSet(TestUnit *unit, uint8_t parameter, AbstractTestType value){
+ErrorCode testUnitSet(TestUnit *unit, uint8_t parameter, AbstractTestType value){
 	if(unit == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
+	ErrorCode r = NO_ERROR;
 	switch(parameter){
-		case TU_EXPORTPATH:	setExportPathHandler(unit, value.pointer);
-							break;
+		case TU_EXPORTPATH:	r = setExportPathHandler(unit, value.pointer);
+							return r;
 	}
+
+	return NO_ERROR;
 }

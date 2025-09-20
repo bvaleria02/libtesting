@@ -7,6 +7,6 @@
 
 #include "types.h"
 
-void exportSingularTestCSV(SingularTest *test, char *path);
+ErrorCode exportSingularTestCSV(SingularTest *test, char *path);
 
 #endif // LIBTESTING_CSV_H

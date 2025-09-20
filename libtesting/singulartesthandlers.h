@@ -7,8 +7,8 @@ double calculateAbsoluteError(double reference, double obtained);
 double calculateSquaredError(double reference, double obtained);
 double calculateRelativeError(double reference, double obtained);
 
-void handleNumericTest(SingularTest *test);
-void handleBooleanTest(SingularTest *test);
-void afterTestStatus(SingularTest *test);
+ErrorCode handleNumericTest(SingularTest *test);
+ErrorCode handleBooleanTest(SingularTest *test);
+ErrorCode afterTestStatus(SingularTest *test);
 
 #endif // LIBTESTING_SINGULARTEST_HANDLERS_H

@@ -29,33 +29,58 @@ double testFunction(double *arguments, uint64_t index, double *time){
 int main(){
 	// Create a test unit with 1 test
 	TestUnit *unit = createTestUnit(1);
+	if(unit == NULL) return ERROR_MALLOC;
 	
-	// Set flags for all tests
-	setFlagAllTestUnit(unit, UNITFLAG_SKIP_TEST,      0);	// Don't skip test
-	setFlagAllTestUnit(unit, UNITFLAG_LOG_RESULTS,    1);	// Show the results
-	setFlagAllTestUnit(unit, UNITFLAG_SHOW_HISTO_MAE, 1);	// Show MAE histogram
-	setFlagAllTestUnit(unit, UNITFLAG_SHOW_HISTO_MRE, 1);	// Show MRE histogram
-	setFlagAllTestUnit(unit, UNITFLAG_SHOW_HISTO_MSE, 0);	// Don't show MSE histogram
-	setFlagAllTestUnit(unit, UNITFLAG_EXPORT_CSV, 	  1);   // export csv with arguments and result
+	// Error code to check if something failed
+	ErrorCode r = NO_ERROR;
 
-	// Set export path
-	//testUnitSet(unit, TU_EXPORTPATH, ATT_PTR("output/test"));
+	// Set flags for all tests
+	r = setFlagAllTestUnit(unit, UNITFLAG_SKIP_TEST,      0);	// Don't skip test
+	if(r != NO_ERROR) return r;
+	r = setFlagAllTestUnit(unit, UNITFLAG_LOG_RESULTS,    1);	// Show the results
+	if(r != NO_ERROR) return r;
+	r = setFlagAllTestUnit(unit, UNITFLAG_SHOW_HISTO_MAE, 1);	// Show MAE histogram
+	if(r != NO_ERROR) return r;
+	r = setFlagAllTestUnit(unit, UNITFLAG_SHOW_HISTO_MRE, 1);	// Show MRE histogram
+	if(r != NO_ERROR) return r;
+	r = setFlagAllTestUnit(unit, UNITFLAG_SHOW_HISTO_MSE, 0);	// Don't show MSE histogram
+	if(r != NO_ERROR) return r;
+	r = setFlagAllTestUnit(unit, UNITFLAG_EXPORT_CSV, 	  1);   // export csv with arguments and result
+	if(r != NO_ERROR) return r;
+
+	// Set export path. Uncomment to change export path
+	/*
+	r = testUnitSet(unit, TU_EXPORTPATH, ATT_PTR("output/test"));
+	if(r != NO_ERROR) return r;
+	*/
 
 	// Create a test
 	SingularTest *test1 = createNewSingularTest();
+	if(test1 == NULL) return ERROR_MALLOC;
 
 	// Set parameters for tests
-	singularTestSet(test1, ST_NAME,				ATT_PTR("Test, \"test\""));
-	singularTestSet(test1, ST_TYPE,				ATT_UINT(TYPE_NUMERIC));
-	singularTestSet(test1, ST_ITERCOUNT,		ATT_UINT(1024));
-	singularTestSet(test1, ST_THRESHOLDFLAG,	ATT_UINT(THRES_MAE | THRES_MRE | THRES_MSE));
-	singularTestSet(test1, ST_MAETHRESHOLD,		ATT_FLT(2));
-	singularTestSet(test1, ST_MRETHRESHOLD,		ATT_FLT(0.1));
-	singularTestSet(test1, ST_MSETHRESHOLD,		ATT_FLT(5));
-	singularTestSet(test1, ST_RMSETHRESHOLD,	ATT_FLT(4));
-	singularTestSet(test1, ST_PASSTHRESHOLD,	ATT_FLT(0.8));
-	singularTestSet(test1, ST_WORSTCRITERIA,	ATT_UINT(WORST_RE));
-	singularTestSet(test1, ST_TESTFUNCTION,	    ATT_PTR(testFunction));
+	r = singularTestSetPointer(	test1, ST_NAME,				"Test, \"test\"");
+	if(r != NO_ERROR) return r;
+	r = singularTestSetInt(		test1, ST_TYPE,				TYPE_NUMERIC);
+	if(r != NO_ERROR) return r;
+	r = singularTestSetInt(		test1, ST_ITERCOUNT,		1024);
+	if(r != NO_ERROR) return r;
+	r = singularTestSetInt(	test1, ST_THRESHOLDFLAG,	THRES_MAE | THRES_MRE | THRES_MSE);
+	if(r != NO_ERROR) return r;
+	r = singularTestSetFloat(	test1, ST_MAETHRESHOLD,		2);
+	if(r != NO_ERROR) return r;
+	r = singularTestSetFloat(	test1, ST_MRETHRESHOLD,		0.1);
+	if(r != NO_ERROR) return r;
+	r = singularTestSetFloat(	test1, ST_MSETHRESHOLD,		5);
+	if(r != NO_ERROR) return r;
+	r = singularTestSetFloat(	test1, ST_RMSETHRESHOLD,	4);
+	if(r != NO_ERROR) return r;
+	r = singularTestSetFloat(	test1, ST_PASSTHRESHOLD,	0.8);
+	if(r != NO_ERROR) return r;
+	r = singularTestSetInt(		test1, ST_WORSTCRITERIA,	WORST_RE);
+	if(r != NO_ERROR) return r;
+	r = singularTestSetPointer(	test1, ST_TESTFUNCTION,	    testFunction);
+	if(r != NO_ERROR) return r;
 	
 	// Fill the arguments and expected results
 	for(uint64_t i = 0; i < test1->iterCount; i++){
@@ -64,12 +89,16 @@ int main(){
 	}
 
 	// Insert test1 into unit with position 0
-	insertTestIntoTestUnit(unit, test1, 0);
+	r = insertTestIntoTestUnit(unit, test1, 0);
+	if(r != NO_ERROR) return r;
 
 	// Run all tests
-	TestUnitRun(unit);
+	r = TestUnitRun(unit);
+	if(r != NO_ERROR) return r;
 
 	// Free both test unit and singular tests
-	destroyTestUnit(unit);
+	r = destroyTestUnit(unit);
+	if(r != NO_ERROR) return r;
+
 	return 0;
 }

@@ -11,20 +11,22 @@
 #include "utils.h"
 
 
-void TimeMetricZero(TimeMetric *metric){
+ErrorCode TimeMetricZero(TimeMetric *metric){
 	if(metric == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	metric->minValue	= 0;
 	metric->maxValue	= 0;
 	metric->average		= 0;
 	metric->elapsed		= 0;
+
+	return NO_ERROR;
 }
 
-void ErrorMetricZero(ErrorMetric *metric){
+ErrorCode ErrorMetricZero(ErrorMetric *metric){
 	if(metric == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 	
 	metric->value 		= 0;
@@ -32,34 +34,45 @@ void ErrorMetricZero(ErrorMetric *metric){
 	metric->threshold 	= 0;
 	metric->minValue 	= 0;
 	metric->maxValue 	= 0;
+
+	return NO_ERROR;
 }
 
-void ErrorMetricZeroTest(ErrorMetric *metric){
+ErrorCode ErrorMetricZeroTest(ErrorMetric *metric){
 	if(metric == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 	
 	metric->value 		= 0;
 	metric->minValue 	= 0;
 	metric->maxValue 	= 0;
+
+	return NO_ERROR;
 }
 
-void SingularTestZeroAll(SingularTest *test){
+ErrorCode SingularTestZeroAll(SingularTest *test){
 	if(test == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
+
+	ErrorCode r = NO_ERROR;
 
 	test->name 				= NULL;
 	test->status			= STATUS_NOT_TESTED;
 	test->type				= TYPE_UNDEFINED;
 	test->iterCount 		= 0;
 
-	ErrorMetricZero(&test->mae);
-	ErrorMetricZero(&test->mre);
-	ErrorMetricZero(&test->mse);
-	ErrorMetricZero(&test->rmse);
+	r = ErrorMetricZero(&test->mae);
+	if(r != NO_ERROR) return r;
+	r = ErrorMetricZero(&test->mre);
+	if(r != NO_ERROR) return r;
+	r = ErrorMetricZero(&test->mse);
+	if(r != NO_ERROR) return r;
+	r = ErrorMetricZero(&test->rmse);
+	if(r != NO_ERROR) return r;
 
-	TimeMetricZero(&test->time);
+	r = TimeMetricZero(&test->time);
+	if(r != NO_ERROR) return r;
 
 	test->passCount 		= 0;
 	test->arguments 		= NULL;
@@ -70,21 +83,29 @@ void SingularTestZeroAll(SingularTest *test){
 	for(uint64_t i = 0; i < WORST_RESULT_COUNT; i++){
 		test->worstresults[i] = WORST_UNSET;
 	}
+
+	return NO_ERROR;
 }
 
-void SingularTestZeroTest(SingularTest *test){
+ErrorCode SingularTestZeroTest(SingularTest *test){
 	if(test == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
+	ErrorCode r = NO_ERROR;
 	test->status			= STATUS_NOT_TESTED;
 
-	ErrorMetricZeroTest(&test->mae);
-	ErrorMetricZeroTest(&test->mre);
-	ErrorMetricZeroTest(&test->mse);
-	ErrorMetricZeroTest(&test->rmse);
+	r = ErrorMetricZeroTest(&test->mae);
+	if(r != NO_ERROR) return r;
+	r = ErrorMetricZeroTest(&test->mre);
+	if(r != NO_ERROR) return r;
+	r = ErrorMetricZeroTest(&test->mse);
+	if(r != NO_ERROR) return r;
+	r = ErrorMetricZeroTest(&test->rmse);
+	if(r != NO_ERROR) return r;
 
-	TimeMetricZero(&test->time);
+	r = TimeMetricZero(&test->time);
+	if(r != NO_ERROR) return r;
 
 	test->passCount 		= 0;
 
@@ -93,12 +114,14 @@ void SingularTestZeroTest(SingularTest *test){
 	}
 
 	if(test->results == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	for(uint64_t i = 0; i < test->iterCount; i++){
 		test->results[i]	= 0;
 	}
+
+	return NO_ERROR;
 }
 
 SingularTest *createNewSingularTest(){
@@ -210,6 +233,8 @@ void singularTestSet(SingularTest *test, uint8_t parameter, AbstractTestType val
 		return;
 	}
 
+	logInfo(INFO_WILL_BE_DEPRECATED, "singularTestSet", "singularTestSetPointer, singularTestSetFloat, singularTestSetInt", 0);
+
 	switch(parameter){
 		case ST_NAME: 			setNameHandler(test, value.pointer);
 								break;
@@ -239,9 +264,129 @@ void singularTestSet(SingularTest *test, uint8_t parameter, AbstractTestType val
 	}
 }
 
-void destroySingularTest(SingularTest *test){
+
+ErrorCode singularTestSetPointer(SingularTest *test, uint8_t parameter, void *value){
+	char *functionName = "singularTestSetPointer";
+
 	if(test == NULL){
-		return;
+		logError(ERROR_NULL_POINTER, functionName, "test", 0);
+		return ERROR_NULL_POINTER;
+	}
+
+
+	switch(parameter){
+		case ST_NAME: 			setNameHandler(test, value);
+								break;
+		case ST_STATUS:			logError(ERROR_WRONG_TYPE, functionName, "ST_STATUS", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+		case ST_TYPE:			logError(ERROR_WRONG_TYPE, functionName, "ST_TYPE", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+		case ST_ITERCOUNT:		logError(ERROR_WRONG_TYPE, functionName, "ST_ITERCOUNT", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+		case ST_MAETHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_MAETHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_MSETHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_MSETHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_RMSETHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_MRETHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_MRETHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_RMSETHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_PASSTHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_PASSTHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_TESTFUNCTION:	if(value == NULL){
+									logError(ERROR_NULL_POINTER, functionName, "value", 0);
+									return ERROR_NULL_POINTER;
+								}
+								test->testFunction = value;
+								break;
+		case ST_THRESHOLDFLAG:	logError(ERROR_WRONG_TYPE, functionName, "ST_THRESHOLDFLAG", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+		case ST_WORSTCRITERIA:	logError(ERROR_WRONG_TYPE, functionName, "ST_WORSTCRITERIA", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+	}
+
+	return NO_ERROR;
+}
+
+ErrorCode singularTestSetFloat(SingularTest *test, uint8_t parameter, double value){
+	char *functionName = "singularTestSetFloat";
+
+	if(test == NULL){
+		logError(ERROR_NULL_POINTER, functionName, "test", 0);
+		return ERROR_NULL_POINTER;
+	}
+
+	switch(parameter){
+		case ST_NAME: 			logError(ERROR_WRONG_TYPE, functionName, "ST_NAME", USE_ATT_POINTER);
+								return ERROR_WRONG_TYPE;
+		case ST_STATUS:			logError(ERROR_WRONG_TYPE, functionName, "ST_STATUS", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+		case ST_TYPE:			logError(ERROR_WRONG_TYPE, functionName, "ST_TYPE", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+		case ST_ITERCOUNT:		logError(ERROR_WRONG_TYPE, functionName, "ST_ITERCOUNT", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+		case ST_MAETHRESHOLD:	test->mae.threshold = value;
+								break;
+		case ST_MSETHRESHOLD:	test->mse.threshold = value;
+								break;
+		case ST_RMSETHRESHOLD:	test->rmse.threshold = value;
+								break;
+		case ST_MRETHRESHOLD:	test->mre.threshold = value;
+								break;
+		case ST_PASSTHRESHOLD:	test->passThreshold = value;
+								break;
+		case ST_TESTFUNCTION:	logError(ERROR_WRONG_TYPE, functionName, "ST_TESTFUNCTION", USE_ATT_TESTFUNCTION);
+								return ERROR_WRONG_TYPE;
+		case ST_THRESHOLDFLAG:	logError(ERROR_WRONG_TYPE, functionName, "ST_THRESHOLDFLAG", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+		case ST_WORSTCRITERIA:	logError(ERROR_WRONG_TYPE, functionName, "ST_WORSTCRITERIA", USE_ATT_UINT);
+								return ERROR_WRONG_TYPE;
+	}
+
+	return NO_ERROR;
+}
+
+ErrorCode singularTestSetInt(SingularTest *test, uint8_t parameter, int64_t value){
+	char *functionName = "singularTestSetInt";
+
+	if(test == NULL){
+		logError(ERROR_NULL_POINTER, functionName, "test", 0);
+		return ERROR_NULL_POINTER;
+	}
+
+	switch(parameter){
+		case ST_NAME: 			logError(ERROR_WRONG_TYPE, functionName, "ST_NAME", USE_ATT_POINTER);
+								return ERROR_WRONG_TYPE;
+		case ST_STATUS:			test->status = value;
+								break;
+		case ST_TYPE:			test->type = value;
+								break;
+		case ST_ITERCOUNT:		setIterCountHandler(test, value);
+								break;
+		case ST_MAETHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_MAETHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_MSETHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_MSETHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_RMSETHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_MRETHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_MRETHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_RMSETHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_PASSTHRESHOLD:	logError(ERROR_WRONG_TYPE, functionName, "ST_PASSTHRESHOLD", USE_ATT_FLOAT);
+								return ERROR_WRONG_TYPE;
+		case ST_TESTFUNCTION:	logError(ERROR_WRONG_TYPE, functionName, "ST_TESTFUNCTION", USE_ATT_TESTFUNCTION);
+								return ERROR_WRONG_TYPE;
+		case ST_THRESHOLDFLAG:	setMetricFlagHandler(test, value & 0xF);
+								break;
+		case ST_WORSTCRITERIA:	test->worstCriteria = value & 0x3;
+								break;
+	}
+
+	return NO_ERROR;
+}
+
+ErrorCode destroySingularTest(SingularTest *test){
+	if(test == NULL){
+		return ERROR_NULL_POINTER;
 	}
 	
 	SAFE_FREE(test->name);
@@ -249,11 +394,13 @@ void destroySingularTest(SingularTest *test){
 	SAFE_FREE(test->results);
 	SAFE_FREE(test->expectedResults);
 	SAFE_FREE(test);
+
+	return NO_ERROR;
 }
 
-void handeTimerSingularTest(SingularTest *test, double time){
+ErrorCode handeTimerSingularTest(SingularTest *test, double time){
 	if(test == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 	
 	if(time > test->time.maxValue){
@@ -265,71 +412,83 @@ void handeTimerSingularTest(SingularTest *test, double time){
 	}
 
 	test->time.elapsed += time;
+	return NO_ERROR;
 }
 
-void handlePostTestTimerSingularTest(SingularTest *test){
+ErrorCode handlePostTestTimerSingularTest(SingularTest *test){
 	if(test == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	test->time.average = test->time.elapsed / (double) test->iterCount;
+	return NO_ERROR;
 }
 
-void SingularTestRun(SingularTest *test){
+ErrorCode SingularTestRun(SingularTest *test){
 	if(test == NULL){
 		logError(ERROR_NULL_POINTER, "SingularTestRun", "test", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->testFunction == NULL){
 		logError(ERROR_NULL_POINTER, "SingularTestRun", "test->testFunction", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 	
 	if(test->iterCount == 0){
 		logError(ERROR_ITER_ZERO, "SingularTestRun", "test->iterCount", 0);
-		return;
+		return ERROR_ITER_ZERO;
 	}
 
 	if(test->arguments == NULL){
 		logError(ERROR_NULL_POINTER, "SingularTestRun", "test->arguments", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->results == NULL){
 		logError(ERROR_NULL_POINTER, "SingularTestRun", "test->results", 0);
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(test->type == TYPE_UNDEFINED){
 		logError(ERROR_TYPE_UNDEF, "SingularTestRun", "test->type", 0);
-		return;
+		return ERROR_TYPE_UNDEF;
 	}
 
-	SingularTestZeroTest(test);
+	ErrorCode r = NO_ERROR;
+
+	r = SingularTestZeroTest(test);
+	if(r != NO_ERROR) return r;
 
 	double time = 0;
 	double result = 0;
 	for(uint64_t i = 0; i < test->iterCount; i++){
 		result = test->testFunction(test->arguments, i, &time);
 		test->results[i] = result;
-		handeTimerSingularTest(test, time);
+		r = handeTimerSingularTest(test, time);
+		if(r != NO_ERROR) return r;
 	}
 
-	handlePostTestTimerSingularTest(test);
+	r = handlePostTestTimerSingularTest(test);
+	if(r != NO_ERROR) return r;
 
 	test->status = STATUS_TESTED;
 	
 	switch(test->type){
-		case TYPE_NUMERIC:	handleNumericTest(test);
+		case TYPE_NUMERIC:	r = handleNumericTest(test);
+							if(r != NO_ERROR) return r;
 							break;
-		case TYPE_BOOLEAN:	handleBooleanTest(test);
+		case TYPE_BOOLEAN:	r = handleBooleanTest(test);
+							if(r != NO_ERROR) return r;
 							break;
 		default:			
 							break;
 	}
 
-	afterTestStatus(test);
+	r = afterTestStatus(test);
+	if(r != NO_ERROR) return r;
+
+	return NO_ERROR;
 }
 
 void copyErroMetric(ErrorMetric *dest, ErrorMetric *src){

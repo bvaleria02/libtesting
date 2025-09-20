@@ -3,21 +3,23 @@
 #include <stdint.h>
 
 #include "histogram.h"
+#include "enums.h"
+#include "types.h"
 #include "termColor.h"
 
-void plotHistogram(double *data, size_t size, uint8_t x, uint8_t y, char *name){
+ErrorCode plotHistogram(double *data, size_t size, uint8_t x, uint8_t y, char *name){
 	if(data == NULL){
-		return;
+		return ERROR_NULL_POINTER;
 	}
 
 	if(size == 0 || x == 0 || y == 0){
-		return;
+		return ERROR_ZERO_LENGTH;
 	}
 
 	size_t chunk = sizeof(double) * x;
 	double *raw = (double *)malloc(chunk);
 	if(raw == NULL){
-		return;
+		return ERROR_MALLOC;
 	}
 
 	FILE *logTarget = stdout;
@@ -104,4 +106,6 @@ void plotHistogram(double *data, size_t size, uint8_t x, uint8_t y, char *name){
 
 	fprintf(logTarget, "\n");
 	free(raw);
+
+	return NO_ERROR;
 }
